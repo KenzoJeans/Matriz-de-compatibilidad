@@ -267,7 +267,7 @@ if vista_modo == "🎴 Tarjetas de Alto Contraste":
             st.markdown(card_html, unsafe_allow_html=True)
 
 else:
-    # Vista en Tabla
+    # Vista en Tabla Interactiva
     def estilo_filas(val):
         v = str(val).lower()
         if "incompatible" in v:
@@ -280,8 +280,14 @@ else:
         columns={"Quimico_2": "Sustancia Comparada", "Compatibilidad": "Resultado", "Notas": "Observaciones"}
     )
 
+    # Compatibilidad de métodos de estilo según versión de Pandas
+    try:
+        df_estilizado = df_mostrar.style.map(estilo_filas, subset=["Resultado"])
+    except AttributeError:
+        df_estilizado = df_mostrar.style.applymap(estilo_filas, subset=["Resultado"])
+
     st.dataframe(
-        df_mostrar.style.map(estilo_filas, subset=["Resultado"]),
-        use_container_layout=True,
+        df_estilizado,
+        use_container_width=True,
         height=500
     )
