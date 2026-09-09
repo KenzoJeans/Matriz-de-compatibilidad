@@ -318,12 +318,14 @@ with tab1:
         st.dataframe(df_estilizado, use_container_width=True, height=500)
  
  
+import numpy as np
+
 # =========================================================
-# PESTAÑA 2: MAPA DE CALOR GENERAL (70 x 70)
+# PESTAÑA 2: MAPA DE CALOR GENERAL (TRIANGULAR)
 # =========================================================
 with tab2:
     st.subheader("🗺️ Matriz Global de Compatibilidad")
-    st.caption("Pasa el cursor sobre cualquier casilla para ver los detalles. Puedes usar las herramientas de la esquina superior derecha para hacer zoom o pan.")
+    st.caption("Pasa el cursor sobre cualquier casilla para ver los detalles.")
  
     matriz_comp = df.pivot_table(index="Quimico_1", columns="Quimico_2", values="Compatibilidad", aggfunc="first")
     matriz_notas = df.pivot_table(index="Quimico_1", columns="Quimico_2", values="Notas", aggfunc="first")
@@ -342,14 +344,23 @@ with tab2:
         return 3
  
     try:
-        z_vals = matriz_comp.map(mapear_color).values
+        z_vals = matriz_comp.map(mapear_color).values.astype(float)
     except AttributeError:
-        z_vals = matriz_comp.applymap(mapear_color).values
+        z_vals = matriz_comp.applymap(mapear_color).values.astype(float)
+
+    # 1. Aplicar máscara triangular: solo mantener valores debajo de la diagonal principal (i > j)
+    n = len(quimicos_unicos)
+    mask_superior_o_diagonal = np.triu(np.ones((n, n), dtype=bool))
+    z_vals[mask_superior_o_diagonal] = np.nan
  
     hover_text = []
     for i, row_name in enumerate(matriz_comp.index):
         row_hover = []
         for j, col_name in enumerate(matriz_comp.columns):
+            if i <= j:
+                row_hover.append("")  # Sin tooltip en celdas inactivas
+                continue
+
             comp = matriz_comp.iloc[i, j]
             nota = matriz_notas.iloc[i, j]
             nota_str = f"<br><b>Observación:</b> {nota}" if (nota and str(nota).strip() != "") else ""
@@ -361,12 +372,12 @@ with tab2:
             )
         hover_text.append(row_hover)
  
-    # Escala discreta uniforme (4 tramos exactos de 0.25)
+    # Escala discreta de colores (Rojo, Amarillo, Verde, Gris)
     colorscale = [
-        [0.00, '#ff4d4f'], [0.25, '#ff4d4f'],  # 0: Incompatible (Rojo)
-        [0.25, '#eab308'], [0.50, '#eab308'],  # 1: Precaución (Amarillo)
-        [0.50, '#27c93f'], [0.75, '#27c93f'],  # 2: Compatible (Verde)
-        [0.75, '#1f242d'], [1.00, '#1f242d']   # 3: Sin Registro (Gris fondo)
+        [0.00, '#ff4d4f'], [0.25, '#ff4d4f'],  # 0: Incompatible
+        [0.25, '#eab308'], [0.50, '#eab308'],  # 1: Precaución
+        [0.50, '#27c93f'], [0.75, '#27c93f'],  # 2: Compatible
+        [0.75, '#30363d'], [1.00, '#30363d']   # 3: Sin Registro
     ]
  
     fig = go.Figure(data=go.Heatmap(
@@ -384,7 +395,7 @@ with tab2:
     ))
  
     fig.update_layout(
-        height=1100,
+        height=1000,
         margin=dict(l=160, r=40, t=120, b=160),
         paper_bgcolor="#0e1117",
         plot_bgcolor="#0e1117",
@@ -393,14 +404,16 @@ with tab2:
             tickangle=-45,
             side="top",
             tickfont=dict(size=8),
-            dtick=1
+            dtick=1,
+            showgrid=False
         ),
         yaxis=dict(
             autorange="reversed",
             tickfont=dict(size=8),
             dtick=1,
             scaleanchor="x",
-            scaleratio=1
+            scaleratio=1,
+            showgrid=False
         )
     )
  
