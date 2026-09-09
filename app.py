@@ -120,7 +120,7 @@ st.markdown(DARK_THEME_CSS, unsafe_allow_html=True)
 # "gid=" en la URL para reemplazar el valor de abajo.
 SHEET_ID = "13iz4k7x-fvdN3yLzLgVOkhIss8P6yCv-"
 GID_PARES = "1151033427"  # <-- reemplaza con el gid real de la pestaña Pares_Compatibilidad
-CSV_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv&gid=1151033427"
+CSV_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv&gid={GID_PARES}"
  
  
 def clave_orden_es(texto):
