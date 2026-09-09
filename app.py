@@ -321,18 +321,41 @@ with tab1:
 import numpy as np
 
 # =========================================================
-# PESTAÑA 2: MAPA DE CALOR GENERAL (TRIANGULAR)
+# PESTAÑA 2: MAPA DE CALOR GENERAL (TRIANGULAR CON BÚSQUEDA)
 # =========================================================
 with tab2:
     st.subheader("🗺️ Matriz Global de Compatibilidad")
-    st.caption("Pasa el cursor sobre cualquier casilla para ver los detalles.")
- 
+    st.caption("Pasa el cursor sobre cualquier casilla para ver los detalles. Usa la rueda del mouse para hacer zoom o arrastra para desplazarte.")
+
+    # ---------------------------------------------------------
+    # PANEL DE CONTROL DE ENFOQUE Y BÚSQUEDA
+    # ---------------------------------------------------------
+    col_busq, col_reset = st.columns([4, 1])
+    
+    with col_busq:
+        quimico_enfoque = st.selectbox(
+            "🔎 Buscar y enfocar sustancia en la matriz:",
+            ["-- Ver Matriz Completa --"] + quimicos_unicos,
+            index=0,
+            key="busqueda_matriz"
+        )
+        
+    with col_reset:
+        st.write("") # Espaciador para alinear con el selectbox
+        st.write("")
+        if st.button("🔍 Restablecer Vista Global", use_container_width=True):
+            st.session_state["busqueda_matriz"] = "-- Ver Matriz Completa --"
+            st.rerun()
+
+    # ---------------------------------------------------------
+    # CONSTRUCCIÓN DE LA MATRIZ
+    # ---------------------------------------------------------
     matriz_comp = df.pivot_table(index="Quimico_1", columns="Quimico_2", values="Compatibilidad", aggfunc="first")
     matriz_notas = df.pivot_table(index="Quimico_1", columns="Quimico_2", values="Notas", aggfunc="first")
- 
+
     matriz_comp = matriz_comp.reindex(index=quimicos_unicos, columns=quimicos_unicos).fillna("Sin Registro")
     matriz_notas = matriz_notas.reindex(index=quimicos_unicos, columns=quimicos_unicos).fillna("")
- 
+
     def mapear_color(val):
         v = str(val).lower()
         if "incompatible" in v:
@@ -342,23 +365,23 @@ with tab2:
         elif "compatible" in v:
             return 2
         return 3
- 
+
     try:
         z_vals = matriz_comp.map(mapear_color).values.astype(float)
     except AttributeError:
         z_vals = matriz_comp.applymap(mapear_color).values.astype(float)
 
-    # 1. Aplicar máscara triangular: solo mantener valores debajo de la diagonal principal (i > j)
+    # Máscara triangular inferior (i > j)
     n = len(quimicos_unicos)
     mask_superior_o_diagonal = np.triu(np.ones((n, n), dtype=bool))
     z_vals[mask_superior_o_diagonal] = np.nan
- 
+
     hover_text = []
     for i, row_name in enumerate(matriz_comp.index):
         row_hover = []
         for j, col_name in enumerate(matriz_comp.columns):
             if i <= j:
-                row_hover.append("")  # Sin tooltip en celdas inactivas
+                row_hover.append("")
                 continue
 
             comp = matriz_comp.iloc[i, j]
@@ -371,15 +394,14 @@ with tab2:
                 f"{nota_str}"
             )
         hover_text.append(row_hover)
- 
-    # Escala discreta de colores (Rojo, Amarillo, Verde, Gris)
+
     colorscale = [
-        [0.00, '#ff4d4f'], [0.25, '#ff4d4f'],  # 0: Incompatible
-        [0.25, '#eab308'], [0.50, '#eab308'],  # 1: Precaución
-        [0.50, '#27c93f'], [0.75, '#27c93f'],  # 2: Compatible
-        [0.75, '#30363d'], [1.00, '#30363d']   # 3: Sin Registro
+        [0.00, '#ff4d4f'], [0.25, '#ff4d4f'],  # Incompatible
+        [0.25, '#eab308'], [0.50, '#eab308'],  # Precaución
+        [0.50, '#27c93f'], [0.75, '#27c93f'],  # Compatible
+        [0.75, '#1f242d'], [1.00, '#1f242d']   # Sin Registro
     ]
- 
+
     fig = go.Figure(data=go.Heatmap(
         z=z_vals,
         x=matriz_comp.columns,
@@ -393,34 +415,69 @@ with tab2:
         xgap=1,
         ygap=1
     ))
- 
+
+    # ---------------------------------------------------------
+    # CÁLCULO DE RANGOS DE ZOOM / ENFOQUE DINÁMICO
+    # ---------------------------------------------------------
+    xaxis_config = dict(
+        tickangle=-90,
+        side="top",
+        tickfont=dict(size=8),
+        dtick=1,
+        showgrid=False
+    )
+    yaxis_config = dict(
+        autorange="reversed",
+        tickfont=dict(size=8),
+        dtick=1,
+        scaleanchor="x",
+        scaleratio=1,
+        showgrid=False
+    )
+
+    if quimico_enfoque != "-- Ver Matriz Completa --":
+        idx_q = quimicos_unicos.index(quimico_enfoque)
+        
+        # Margen de celdas a mostrar alrededor de la sustancia elegida
+        margen = 8  
+        x_min = max(0, idx_q - margen)
+        x_max = min(n - 1, idx_q + margen)
+        y_min = max(0, idx_q - margen)
+        y_max = min(n - 1, idx_q + margen)
+
+        # Ajustar rangos en los ejes para hacer zoom automático en la zona
+        xaxis_config["range"] = [x_min - 0.5, x_max + 0.5]
+        yaxis_config["range"] = [y_max + 0.5, y_min - 0.5]  # Invertido por autorange
+
+        # Líneas de resalte visual sobre la fila/columna de la sustancia seleccionada
+        fig.add_shape(
+            type="rect",
+            x0=-0.5, x1=n - 0.5,
+            y0=idx_q - 0.5, y1=idx_q + 0.5,
+            line=dict(color="#58a6ff", width=2),
+            fillcolor="rgba(88, 166, 255, 0.1)"
+        )
+        fig.add_shape(
+            type="rect",
+            x0=idx_q - 0.5, x1=idx_q + 0.5,
+            y0=-0.5, y1=n - 0.5,
+            line=dict(color="#58a6ff", width=2),
+            fillcolor="rgba(88, 166, 255, 0.1)"
+        )
+
     fig.update_layout(
-        height=1100,
+        height=1000,
         margin=dict(l=180, r=40, t=200, b=100),
         paper_bgcolor="#0e1117",
         plot_bgcolor="#0e1117",
-        dragmode="pan",  # Permite arrastrar el mapa con clic sostenido
+        dragmode="pan",
         font=dict(color="#e6edf3", size=9),
-        xaxis=dict(
-            tickangle=-90,  # Texto vertical a 90 grados
-            side="top",
-            tickfont=dict(size=8),
-            dtick=1,
-            showgrid=False
-        ),
-        yaxis=dict(
-            autorange="reversed",
-            tickfont=dict(size=8),
-            dtick=1,
-            scaleanchor="x",
-            scaleratio=1,
-            showgrid=False
-        )
+        xaxis=xaxis_config,
+        yaxis=yaxis_config
     )
 
-    # Habilitar zoom con la rueda del mouse y configurar la barra de herramientas
     st.plotly_chart(
-        fig, 
+        fig,
         use_container_width=True,
         config={
             'scrollZoom': True,
