@@ -471,8 +471,9 @@ with tab2:
             )
 
     fig.update_layout(
-        height=950,
-        margin=dict(l=130, r=40, t=180, b=80),
+        autosize=True,  # Permite que el gráfico se expanda fluidamente
+        # Eliminamos el 'height=950' fijo para que crezca con la pantalla
+        margin=dict(l=140, r=40, t=180, b=80),
         paper_bgcolor="#0e1117",
         plot_bgcolor="#0e1117",
         dragmode="pan",
@@ -487,9 +488,7 @@ with tab2:
         config={
             'scrollZoom': True,
             'displayModeBar': True,
-            # Ocultamos select, lasso y el botón de pantalla completa que causa el fallo en Streamlit
             'modeBarButtonsToRemove': ['select2d', 'lasso2d', 'toggleFullscreen']
         }
     )
-
  
