@@ -1,8 +1,9 @@
-
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 import unicodedata
+import requests
+from io import StringIO
  
 # ---------------------------------------------------------
 # 1. CONFIGURACIÓN DE PÁGINA Y TEMA OSCURO (CUSTOM CSS)
@@ -131,8 +132,14 @@ def clave_orden_es(texto):
  
 @st.cache_data(ttl=600)
 def cargar_datos():
+    # Google a veces responde 400 a peticiones sin un User-Agent de navegador
+    # (lo trata como bot). Hacemos la petición con requests para poder
+    # mandar ese header, en vez de dejar que pandas la haga directo.
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
     try:
-        df = pd.read_csv(CSV_URL)
+        resp = requests.get(CSV_URL, headers=headers, timeout=15)
+        resp.raise_for_status()
+        df = pd.read_csv(StringIO(resp.text))
     except Exception as e:
         st.error(f"Error al cargar la base de datos desde Google Sheets: {e}")
         return pd.DataFrame()
