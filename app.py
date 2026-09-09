@@ -325,22 +325,12 @@ with tab2:
     st.subheader("🗺️ Matriz Global de Compatibilidad")
     st.caption("Pasa el cursor sobre cualquier casilla para ver los detalles. Puedes usar las herramientas de la esquina superior derecha para hacer zoom o pan.")
  
-    # FIX 3: pivot_table + aggfunc="first" no revienta si hay filas duplicadas
-    # (por ejemplo, si alguien duplica sin querer un par al editar en Sheets).
     matriz_comp = df.pivot_table(index="Quimico_1", columns="Quimico_2", values="Compatibilidad", aggfunc="first")
     matriz_notas = df.pivot_table(index="Quimico_1", columns="Quimico_2", values="Notas", aggfunc="first")
  
-    # FIX 4: reindexar ambos ejes con el mismo orden alfabético "real" en
-    # español (ignorando tildes), para que no queden columnas/filas
-    # descolgadas del resto de la matriz (ej. "ÁCIDO ACETICO" quedando al final
-    # por el orden Unicode por defecto).
-    matriz_comp = matriz_comp.reindex(index=quimicos_unicos, columns=quimicos_unicos)
-    matriz_notas = matriz_notas.reindex(index=quimicos_unicos, columns=quimicos_unicos)
+    matriz_comp = matriz_comp.reindex(index=quimicos_unicos, columns=quimicos_unicos).fillna("Sin Registro")
+    matriz_notas = matriz_notas.reindex(index=quimicos_unicos, columns=quimicos_unicos).fillna("")
  
-    matriz_comp = matriz_comp.fillna("Sin Registro")
-    matriz_notas = matriz_notas.fillna("")
- 
-    # Mapeo numérico para matriz de colores (0: Rojo, 1: Amarillo, 2: Verde, 3: Gris)
     def mapear_color(val):
         v = str(val).lower()
         if "incompatible" in v:
@@ -356,7 +346,6 @@ with tab2:
     except AttributeError:
         z_vals = matriz_comp.applymap(mapear_color).values
  
-    # Generación de textos para Tooltip personalizado al pasar el cursor
     hover_text = []
     for i, row_name in enumerate(matriz_comp.index):
         row_hover = []
@@ -372,13 +361,12 @@ with tab2:
             )
         hover_text.append(row_hover)
  
-    # Escala de colores personalizada (Discreta)
-    # Rojo (#ff4d4f), Amarillo (#eab308), Verde (#27c93f), Gris (#30363d)
+    # Escala discreta uniforme (4 tramos exactos de 0.25)
     colorscale = [
-        [0.0, '#ff4d4f'], [0.25, '#ff4d4f'],
-        [0.25, '#eab308'], [0.50, '#eab308'],
-        [0.50, '#27c93f'], [0.75, '#27c93f'],
-        [0.75, '#30363d'], [1.0, '#30363d']
+        [0.00, '#ff4d4f'], [0.25, '#ff4d4f'],  # 0: Incompatible (Rojo)
+        [0.25, '#eab308'], [0.50, '#eab308'],  # 1: Precaución (Amarillo)
+        [0.50, '#27c93f'], [0.75, '#27c93f'],  # 2: Compatible (Verde)
+        [0.75, '#1f242d'], [1.00, '#1f242d']   # 3: Sin Registro (Gris fondo)
     ]
  
     fig = go.Figure(data=go.Heatmap(
@@ -388,17 +376,32 @@ with tab2:
         text=hover_text,
         hoverinfo="text",
         colorscale=colorscale,
-        showscale=False
+        zmin=-0.5,
+        zmax=3.5,
+        showscale=False,
+        xgap=1,
+        ygap=1
     ))
  
     fig.update_layout(
-        height=950,
-        margin=dict(l=150, r=20, t=80, b=150),
+        height=1100,
+        margin=dict(l=160, r=40, t=120, b=160),
         paper_bgcolor="#0e1117",
         plot_bgcolor="#0e1117",
-        font=dict(color="#e6edf3", size=10),
-        xaxis=dict(tickangle=-45, side="top", tickfont=dict(size=9)),
-        yaxis=dict(autorange="reversed", tickfont=dict(size=9))
+        font=dict(color="#e6edf3", size=9),
+        xaxis=dict(
+            tickangle=-45,
+            side="top",
+            tickfont=dict(size=8),
+            dtick=1
+        ),
+        yaxis=dict(
+            autorange="reversed",
+            tickfont=dict(size=8),
+            dtick=1,
+            scaleanchor="x",
+            scaleratio=1
+        )
     )
  
     st.plotly_chart(fig, use_container_width=True)
