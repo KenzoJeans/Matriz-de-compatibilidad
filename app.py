@@ -395,13 +395,14 @@ with tab2:
     ))
  
     fig.update_layout(
-        height=1000,
-        margin=dict(l=160, r=40, t=120, b=160),
+        height=1100,
+        margin=dict(l=180, r=40, t=200, b=100),
         paper_bgcolor="#0e1117",
         plot_bgcolor="#0e1117",
+        dragmode="pan",  # Permite arrastrar el mapa con clic sostenido
         font=dict(color="#e6edf3", size=9),
         xaxis=dict(
-            tickangle=-45,
+            tickangle=-90,  # Texto vertical a 90 grados
             side="top",
             tickfont=dict(size=8),
             dtick=1,
@@ -416,6 +417,15 @@ with tab2:
             showgrid=False
         )
     )
- 
-    st.plotly_chart(fig, use_container_width=True)
+
+    # Habilitar zoom con la rueda del mouse y configurar la barra de herramientas
+    st.plotly_chart(
+        fig, 
+        use_container_width=True,
+        config={
+            'scrollZoom': True,
+            'displayModeBar': True,
+            'modeBarButtonsToRemove': ['select2d', 'lasso2d']
+        }
+    )
  
