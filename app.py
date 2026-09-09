@@ -425,7 +425,8 @@ with tab2:
         tickfont=dict(size=8),
         dtick=1,
         showgrid=False,
-        zeroline=False
+        zeroline=False,
+        constraintoward='left'  # Alinea el zoom hacia la izquierda
     )
     yaxis_config = dict(
         autorange="reversed",
@@ -434,13 +435,13 @@ with tab2:
         scaleanchor="x",
         scaleratio=1,
         showgrid=False,
-        zeroline=False
+        zeroline=False,
+        constraintoward='top'   # Alinea el zoom hacia arriba
     )
 
     if quimico_enfoque != "-- Ver Matriz Completa --":
         idx_q = quimicos_unicos.index(quimico_enfoque)
         
-        # Margen ultra cercano (ej. 2 o 3 para ver sus vecinos inmediatos)
         margen = 3  
         x_min = max(0, idx_q - margen)
         x_max = min(n - 1, idx_q + margen)
@@ -471,7 +472,6 @@ with tab2:
 
     fig.update_layout(
         height=950,
-        # Reducimos drásticamente el margen izquierdo de 180 a 130 para acercar las etiquetas
         margin=dict(l=130, r=40, t=180, b=80),
         paper_bgcolor="#0e1117",
         plot_bgcolor="#0e1117",
