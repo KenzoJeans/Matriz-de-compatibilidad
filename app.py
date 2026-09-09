@@ -471,7 +471,7 @@ with tab2:
             )
 
     fig.update_layout(
-        height=1250,
+        height=1500,
         margin=dict(l=130, r=40, t=180, b=80),
         paper_bgcolor="#0e1117",
         plot_bgcolor="#0e1117",
