@@ -439,7 +439,7 @@ with tab2:
         idx_q = quimicos_unicos.index(quimico_enfoque)
         
         # Margen más estrecho para un zoom bien cercano
-        margen = 5  
+        margen = 15  
         x_min = max(0, idx_q - margen)
         x_max = min(n - 1, idx_q + margen)
         y_min = max(0, idx_q - margen)
