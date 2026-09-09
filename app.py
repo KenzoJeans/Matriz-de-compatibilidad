@@ -480,6 +480,14 @@ with tab2:
         xaxis=xaxis_config,
         yaxis=yaxis_config
     )
-
+st.plotly_chart(
+        fig,
+        use_container_width=True,
+        config={
+            'scrollZoom': True,
+            'displayModeBar': True,
+            'modeBarButtonsToRemove': ['select2d', 'lasso2d']
+        }
+    )
 
  
