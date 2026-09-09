@@ -438,32 +438,35 @@ with tab2:
     if quimico_enfoque != "-- Ver Matriz Completa --":
         idx_q = quimicos_unicos.index(quimico_enfoque)
         
-        # Margen de celdas a mostrar alrededor de la sustancia elegida
-        margen = 8  
+        # Margen más estrecho para un zoom bien cercano
+        margen = 5  
         x_min = max(0, idx_q - margen)
         x_max = min(n - 1, idx_q + margen)
         y_min = max(0, idx_q - margen)
         y_max = min(n - 1, idx_q + margen)
 
-        # Ajustar rangos en los ejes para hacer zoom automático en la zona
+        # 1. Encuadre estricto de la cámara sobre la zona enfocada
         xaxis_config["range"] = [x_min - 0.5, x_max + 0.5]
-        yaxis_config["range"] = [y_max + 0.5, y_min - 0.5]  # Invertido por autorange
+        yaxis_config["range"] = [y_max + 0.5, y_min - 0.5]
 
-        # Líneas de resalte visual sobre la fila/columna de la sustancia seleccionada
+        # 2. Resalte horizontal (solo hasta la diagonal para no proyectar al vacío)
         fig.add_shape(
             type="rect",
-            x0=-0.5, x1=n - 0.5,
+            x0=-0.5, x1=idx_q - 0.5 if idx_q > 0 else 0.5,
             y0=idx_q - 0.5, y1=idx_q + 0.5,
             line=dict(color="#58a6ff", width=2),
-            fillcolor="rgba(88, 166, 255, 0.1)"
+            fillcolor="rgba(88, 166, 255, 0.15)"
         )
-        fig.add_shape(
-            type="rect",
-            x0=idx_q - 0.5, x1=idx_q + 0.5,
-            y0=-0.5, y1=n - 0.5,
-            line=dict(color="#58a6ff", width=2),
-            fillcolor="rgba(88, 166, 255, 0.1)"
-        )
+        
+        # 3. Resalte vertical (solo desde la diagonal hacia abajo)
+        if idx_q < n - 1:
+            fig.add_shape(
+                type="rect",
+                x0=idx_q - 0.5, x1=idx_q + 0.5,
+                y0=idx_q + 0.5, y1=n - 0.5,
+                line=dict(color="#58a6ff", width=2),
+                fillcolor="rgba(88, 166, 255, 0.15)"
+            )
 
     fig.update_layout(
         height=1000,
