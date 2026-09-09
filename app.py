@@ -424,7 +424,8 @@ with tab2:
         side="top",
         tickfont=dict(size=8),
         dtick=1,
-        showgrid=False
+        showgrid=False,
+        zeroline=False
     )
     yaxis_config = dict(
         autorange="reversed",
@@ -432,24 +433,24 @@ with tab2:
         dtick=1,
         scaleanchor="x",
         scaleratio=1,
-        showgrid=False
+        showgrid=False,
+        zeroline=False
     )
 
     if quimico_enfoque != "-- Ver Matriz Completa --":
         idx_q = quimicos_unicos.index(quimico_enfoque)
         
-        # Margen más estrecho para un zoom bien cercano
-        margen = 1  
+        # Margen ultra cercano (ej. 2 o 3 para ver sus vecinos inmediatos)
+        margen = 3  
         x_min = max(0, idx_q - margen)
         x_max = min(n - 1, idx_q + margen)
         y_min = max(0, idx_q - margen)
         y_max = min(n - 1, idx_q + margen)
 
-        # 1. Encuadre estricto de la cámara sobre la zona enfocada
         xaxis_config["range"] = [x_min - 0.5, x_max + 0.5]
         yaxis_config["range"] = [y_max + 0.5, y_min - 0.5]
 
-        # 2. Resalte horizontal (solo hasta la diagonal para no proyectar al vacío)
+        # Resalte horizontal
         fig.add_shape(
             type="rect",
             x0=-0.5, x1=idx_q - 0.5 if idx_q > 0 else 0.5,
@@ -458,7 +459,7 @@ with tab2:
             fillcolor="rgba(88, 166, 255, 0.15)"
         )
         
-        # 3. Resalte vertical (solo desde la diagonal hacia abajo)
+        # Resalte vertical
         if idx_q < n - 1:
             fig.add_shape(
                 type="rect",
@@ -469,8 +470,9 @@ with tab2:
             )
 
     fig.update_layout(
-        height=1000,
-        margin=dict(l=180, r=40, t=200, b=100),
+        height=950,
+        # Reducimos drásticamente el margen izquierdo de 180 a 130 para acercar las etiquetas
+        margin=dict(l=130, r=40, t=180, b=80),
         paper_bgcolor="#0e1117",
         plot_bgcolor="#0e1117",
         dragmode="pan",
